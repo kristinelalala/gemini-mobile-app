@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import * as L from 'leaflet';
 import { ITINERARY_DATA } from './constants';
-import { ActivityType } from '../types';
+import { ActivityType } from './types';
 
 // Tailwind color mapping for icons
 const getColorForType = (type: ActivityType) => {
