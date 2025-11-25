@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Bot, User, Sparkles } from 'lucide-react';
-import { ChatMessage } from '../types';
+import { ChatMessage } from './types';
 import { sendMessageToGemini } from ''./geminiService'';
 import ReactMarkdown from 'react-markdown';
 
