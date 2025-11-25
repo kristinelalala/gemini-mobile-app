@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ITINERARY_DATA } from './constants';
-import ActivityCard from './components/ActivityCard/ActivityCard.tsx';;
+import ActivityCard from './components/ActivityCard/ActivityCard.tsx';
 import { AIChatModal } from './components/AIChatModal';
 import { WeatherWidget } from './components/WeatherWidget';
 import { CostView } from './components/CostView';
