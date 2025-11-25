@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Activity, ActivityType } from '../types';
+import { Activity, ActivityType } from './types';
 import { MapPin, ArrowUpRight, Languages, Hotel, Utensils, ShoppingBag, Train, Camera } from 'lucide-react';
 import { ShowCardModal } from './ShowCardModal';
 
