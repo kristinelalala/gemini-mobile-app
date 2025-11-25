@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ITINERARY_DATA } from './constants';
 import ActivityCard from './ActivityCard';
-import { AIChatModal } from './components/AIChatModal';
-import { WeatherWidget } from './components/WeatherWidget';
-import { CostView } from './components/CostView';
-import { MapView } from './components/MapView';
+import { AIChatModal } from './AIChatModal';
+import { WeatherWidget } from './WeatherWidget';
+import { CostView } from './CostView';
+import { MapView } from './MapView';
 import { MessageCircle, Map as MapIcon, Calendar, Wallet } from 'lucide-react';
 
 const App: React.FC = () => {
