@@ -1,5 +1,5 @@
 import { GoogleGenAI } from "@google/genai";
-import { ITINERARY_DATA } from "../constants";
+import { ITINERARY_DATA } from "./constants";
 
 // Construct a context string from the itinerary data
 const ITINERARY_CONTEXT = JSON.stringify(ITINERARY_DATA, null, 2);
