@@ -3,43 +3,23 @@ import { ITINERARY_DATA } from "../constants";
 
 const ITINERARY_CONTEXT = JSON.stringify(ITINERARY_DATA, null, 2);
 
-const SYSTEM_INSTRUCTION = `
-You are an expert local guide and travel assistant for a user visiting Tokyo from Taiwan.
-The user has a specific itinerary loaded into their app, which is provided below in JSON format.
-
-ITINERARY_CONTEXT:
-${ITINERARY_CONTEXT}
-
-Your Goal:
-Answer the user's questions about their trip, providing navigation advice, cultural tips, or weather info relevant to their specific schedule.
-If they ask "Where do I go next?", check the time context or explain the sequence.
-Keep answers concise and mobile-friendly (short paragraphs, bullet points).
-Be enthusiastic and polite.
-If the user asks about a location not in the itinerary, provide general advice but mention it's an extra stop.
-
-IMPORTANT:
-Always respond in Traditional Chinese (Taiwanese Mandarin usage).
-`;
+const SYSTEM_INSTRUCTION = `你是一位專業的導遊。用戶的旅遊行程如下：${ITINERARY_CONTEXT}。請務必使用繁體中文回答用戶關於行程的問題。`;
 
 export const sendMessageToGemini = async (message: string): Promise<string> => {
   try {
     const apiKey = process.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
-    if (!apiKey) {
-      return "很抱歉，我現在無法連線。請檢查您的 API 金鑰設定。";
-    }
+    if (!apiKey) return "API 金鑰缺失";
 
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-flash",
-      systemInstruction: SYSTEM_INSTRUCTION 
-    });
+    // 使用最基礎的傳參方式，避免 Vercel 編譯器報錯
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const result = await model.generateContent(message);
+    const prompt = `系統指令：${SYSTEM_INSTRUCTION}\n\n用戶問題：${message}`;
+    const result = await model.generateContent(prompt);
     const response = await result.response;
-    return response.text() || "無法產生回應，請再試一次。";
-
+    return response.text() || "抱歉，我暫時無法回答。";
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "抱歉，處理您的請求時發生錯誤。";
+    console.error("Error:", error);
+    return "連線發生錯誤。";
   }
 };
