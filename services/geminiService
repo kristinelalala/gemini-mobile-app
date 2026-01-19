@@ -1,23 +1,24 @@
 // @ts-nocheck
-export const sendMessageToGemini = async (message: string): Promise<string> => {
+export const sendMessageToGemini = async (msg) => {
   try {
-    const key = process.env.VITE_GEMINI_API_KEY || "";
-    if (!key) return "金鑰缺失";
+    const apiK = process.env.VITE_GEMINI_API_KEY || "";
+    if (!apiK) return "Missing Key";
 
-    // 採用最原始的 API 呼叫方式，完全避開 SDK 和括號解析問題
-    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key;
+    const fetchUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + apiK;
     
-    const response = await fetch(url, {
+    const reqBody = {
+      contents: [{ parts: [{ text: "請用繁體中文回答：" + msg }] }]
+    };
+
+    const res = await fetch(fetchUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: "妳是一位專業導遊，請用繁體中文回答：" + message }] }]
-      })
+      body: JSON.stringify(reqBody)
     });
 
-    const data = await response.json();
-    return data.candidates[0].content.parts[0].text || "無回應";
-  } catch (e) {
-    return "連線失敗";
+    const resData = await res.json();
+    return resData.candidates[0].content.parts[0].text || "No response";
+  } catch (err) {
+    return "Error";
   }
 };
