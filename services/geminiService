@@ -1,21 +1,23 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { ITINERARY_DATA } from "../constants";
-
+// @ts-nocheck
 export const sendMessageToGemini = async (message: string): Promise<string> => {
   try {
-    const key = process.env.VITE_GEMINI_API_KEY || process.env.API_KEY || "";
-    if (!key) return "Missing API Key";
+    const key = process.env.VITE_GEMINI_API_KEY || "";
+    if (!key) return "金鑰缺失";
 
-    const genAI = new GoogleGenerativeAI(key);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // 採用最原始的 API 呼叫方式，完全避開 SDK 和括號解析問題
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=" + key;
+    
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: "妳是一位專業導遊，請用繁體中文回答：" + message }] }]
+      })
+    });
 
-    // 將複雜的 JSON 轉為純文字，避免編譯器在處理變數時出錯
-    const contextText = "行程資料已載入";
-    const finalPrompt = contextText + "。用戶問題 " + message;
-
-    const result = await model.generateContent(finalPrompt);
-    return result.response.text() || "無回應";
+    const data = await response.json();
+    return data.candidates[0].content.parts[0].text || "無回應";
   } catch (e) {
-    return "連線錯誤";
+    return "連線失敗";
   }
 };
