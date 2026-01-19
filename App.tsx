@@ -1,12 +1,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ITINERARY_DATA } from './constants';
-import ActivityCard from './ActivityCard';
-import { AIChatModal } from './AIChatModal';
-import { WeatherWidget } from './WeatherWidget';
-import { CostView } from './CostView';
-import { MapView } from './MapView';
-import { MessageCircle, Map as MapIcon, Calendar, Wallet } from 'lucide-react';
+import { ActivityCard } from './components/ActivityCard';
+import { AIChatModal } from './components/AIChatModal';
+import { WeatherWidget } from './components/WeatherWidget';
+import { CostView } from './components/CostView';
+import { MapView } from './components/MapView';
+import { MessageCircle, Map as MapIcon, Calendar, Wallet, Share2 } from 'lucide-react';
 
 const App: React.FC = () => {
   const [activeDayIndex, setActiveDayIndex] = useState(0);
@@ -34,6 +34,24 @@ const App: React.FC = () => {
   const scrollToTop = () => {
     if (scrollRef.current) {
         scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: '2026♡Japan GO！',
+          text: '這是我們的東京行程表！快來看看～',
+          url: window.location.href,
+        });
+      } catch (err) {
+        console.log('Error sharing:', err);
+      }
+    } else {
+      // Fallback for desktop or unsupported browsers
+      navigator.clipboard.writeText(window.location.href);
+      alert('網址已複製！請貼上傳給旅伴～');
     }
   };
 
@@ -147,14 +165,21 @@ const App: React.FC = () => {
       {/* Sticky Header */}
       <div 
         onClick={scrollToTop}
-        className="pt-10 pb-2 px-6 bg-[#FDFDFD]/90 backdrop-blur-sm z-40 sticky top-0 border-b border-slate-50 cursor-pointer"
+        className="pt-10 pb-2 px-6 bg-[#FDFDFD]/90 backdrop-blur-sm z-40 sticky top-0 border-b border-slate-50 cursor-pointer flex justify-between items-center"
       >
-        <div className="flex flex-col items-center mx-auto">
+        <div className="w-6"></div> {/* Spacer for balance */}
+        <div className="flex flex-col items-center">
           <div className="flex items-center gap-2">
              <div className="w-px h-4 bg-slate-900 rotate-12"></div>
              <h1 className="font-serif-tc font-bold text-lg tracking-[0.1em] text-slate-900">2026♡Japan GO！</h1>
           </div>
         </div>
+        <button 
+          onClick={(e) => { e.stopPropagation(); handleShare(); }}
+          className="w-6 flex justify-end text-slate-400 hover:text-slate-900 transition-colors"
+        >
+          <Share2 className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Main Content Area */}

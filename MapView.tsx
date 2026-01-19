@@ -1,8 +1,8 @@
 
 import React, { useEffect, useRef } from 'react';
 import * as L from 'leaflet';
-import { ITINERARY_DATA } from './constants';
-import { ActivityType } from './types';
+import { ITINERARY_DATA } from '../constants';
+import { ActivityType } from '../types';
 
 // Tailwind color mapping for icons
 const getColorForType = (type: ActivityType) => {
@@ -27,12 +27,11 @@ export const MapView: React.FC = () => {
         const map = L.map(mapRef.current, {
             center: [35.6895, 139.6917], // Tokyo center
             zoom: 12,
-            zoomControl: false, // We'll add it in a better position or custom
+            zoomControl: false,
             attributionControl: false
         });
 
-        // Switch to Google Maps Tile Layer for explicit Language Support (zh-TW)
-        // lyrs=m (standard roadmap), hl=zh-TW (Traditional Chinese)
+        // Use Google Maps Tile Layer for Traditional Chinese support
         L.tileLayer('https://{s}.google.com/vt/lyrs=m&x={x}&y={y}&z={z}&hl=zh-TW', {
             maxZoom: 20,
             subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
@@ -41,46 +40,58 @@ export const MapView: React.FC = () => {
 
         leafletMapRef.current = map;
 
-        // Collect all coordinates to fit bounds later
         const bounds: L.LatLngExpression[] = [];
 
-        // Add Markers
+        // Add Markers for all activities with coordinates
         ITINERARY_DATA.forEach(day => {
             day.activities.forEach(activity => {
                 if (activity.coordinates) {
                     const { lat, lng } = activity.coordinates;
                     const color = getColorForType(activity.type);
                     
-                    // Create Custom HTML Icon
+                    // Create Custom Div Icon
                     const icon = L.divIcon({
                         className: 'custom-div-icon',
                         html: `
                             <div style="
                                 background-color: ${color};
-                                width: 24px;
-                                height: 24px;
+                                width: 26px;
+                                height: 26px;
                                 border-radius: 50%;
-                                border: 3px solid white;
-                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+                                border: 2.5px solid white;
+                                box-shadow: 0 4px 10px rgba(0,0,0,0.2);
                                 display: flex;
                                 align-items: center;
                                 justify-content: center;
-                            ">
-                                <div style="width: 6px; height: 6px; background-color: white; border-radius: 50%;"></div>
+                                transition: transform 0.2s;
+                            " class="marker-pin">
+                                <div style="width: 5px; height: 5px; background-color: white; border-radius: 50%;"></div>
                             </div>
                         `,
-                        iconSize: [24, 24],
-                        iconAnchor: [12, 12],
-                        popupAnchor: [0, -12]
+                        iconSize: [26, 26],
+                        iconAnchor: [13, 13],
+                        popupAnchor: [0, -13]
                     });
+
+                    // Enhanced Popup Content with Notes from constants.ts
+                    const notesHtml = activity.notes && activity.notes.length > 0 
+                        ? `<div style="margin-top: 8px; border-top: 1px solid #f1f5f9; padding-top: 8px;">
+                             ${activity.notes.map(note => `<div style="font-size: 10px; color: #64748b; line-height: 1.4; margin-bottom: 2px;">• ${note}</div>`).join('')}
+                           </div>`
+                        : '';
 
                     const marker = L.marker([lat, lng], { icon })
                         .addTo(map)
                         .bindPopup(`
-                            <div class="font-serif-tc p-1">
-                                <div class="text-[10px] text-slate-400 font-bold tracking-widest uppercase mb-1">${day.displayDate}</div>
-                                <div class="font-bold text-slate-900 text-sm mb-1">${activity.title}</div>
-                                <div class="text-xs text-slate-500">${activity.jpTitle || activity.location}</div>
+                            <div style="font-family: 'Noto Serif TC', serif; min-width: 160px; max-width: 220px; padding: 4px;">
+                                <div style="font-size: 9px; color: #94a3b8; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 4px;">
+                                    ${day.displayDate} ${day.weekday}
+                                </div>
+                                <div style="font-weight: 900; color: #0f172a; font-size: 14px; line-height: 1.3; margin-bottom: 4px;">
+                                    ${activity.title}
+                                </div>
+                                ${activity.jpTitle ? `<div style="font-size: 11px; color: #475569; font-family: 'Noto Sans JP', sans-serif; margin-bottom: 4px;">${activity.jpTitle}</div>` : `<div style="font-size: 11px; color: #64748b;">${activity.location}</div>`}
+                                ${notesHtml}
                             </div>
                         `, {
                             closeButton: false,
@@ -92,12 +103,11 @@ export const MapView: React.FC = () => {
             });
         });
 
-        // Fit Bounds
+        // Fit Bounds to show all markers
         if (bounds.length > 0) {
-            map.fitBounds(bounds, { padding: [50, 50] });
+            map.fitBounds(bounds, { padding: [40, 40] });
         }
 
-        // Cleanup
         return () => {
             if (leafletMapRef.current) {
                 leafletMapRef.current.remove();
@@ -110,44 +120,49 @@ export const MapView: React.FC = () => {
         <div className="w-full h-full relative bg-slate-50">
             <div ref={mapRef} className="w-full h-full z-0" />
             
-            {/* Legend / Overlay */}
-            <div className="absolute top-4 left-4 z-[400] bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-slate-100 max-w-[200px]">
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-widest mb-3 font-serif-tc">地圖圖例</h3>
-                <div className="space-y-2">
-                    <div className="flex items-center gap-2">
+            {/* Legend Overlay */}
+            <div className="absolute top-4 left-4 z-[400] bg-white/95 backdrop-blur-md p-4 rounded-2xl shadow-xl border border-white/20 max-w-[160px] animate-fade-in">
+                <h3 className="text-[10px] font-bold text-slate-900 uppercase tracking-widest mb-3 font-serif-tc border-b border-slate-100 pb-2">地圖圖例</h3>
+                <div className="space-y-2.5">
+                    <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-slate-800 border-2 border-white shadow-sm"></div>
-                        <span className="text-[10px] text-slate-600 font-medium font-serif-tc">住宿</span>
+                        <span className="text-[10px] text-slate-600 font-bold font-serif-tc">住宿</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-rose-400 border-2 border-white shadow-sm"></div>
-                        <span className="text-[10px] text-slate-600 font-medium font-serif-tc">餐飲</span>
+                        <span className="text-[10px] text-slate-600 font-bold font-serif-tc">餐飲</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-orange-300 border-2 border-white shadow-sm"></div>
-                        <span className="text-[10px] text-slate-600 font-medium font-serif-tc">購物</span>
+                        <span className="text-[10px] text-slate-600 font-bold font-serif-tc">購物</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-[#10b981] border-2 border-white shadow-sm"></div>
-                        <span className="text-[10px] text-slate-600 font-medium font-serif-tc">觀光</span>
+                        <span className="text-[10px] text-slate-600 font-bold font-serif-tc">觀光</span>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-3">
                         <div className="w-3 h-3 rounded-full bg-[#60a5fa] border-2 border-white shadow-sm"></div>
-                        <span className="text-[10px] text-slate-600 font-medium font-serif-tc">交通</span>
+                        <span className="text-[10px] text-slate-600 font-bold font-serif-tc">交通</span>
                     </div>
                 </div>
             </div>
             
             <style>{`
                 .leaflet-popup-content-wrapper {
-                    border-radius: 12px;
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                    padding: 0;
+                    border-radius: 16px;
+                    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+                    padding: 4px;
+                    border: 1px solid rgba(0,0,0,0.05);
                 }
                 .leaflet-popup-content {
-                    margin: 12px 16px;
+                    margin: 12px;
                 }
                 .leaflet-popup-tip {
                     background: white;
+                }
+                .marker-pin:hover {
+                    transform: scale(1.2);
+                    z-index: 1000 !important;
                 }
             `}</style>
         </div>

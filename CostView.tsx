@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Wallet, Hotel, Utensils, ShoppingBag, Train, Ticket, Plus, X, Trash2, CheckCircle2, RefreshCw } from 'lucide-react';
 
@@ -22,8 +21,8 @@ const INITIAL_EXPENSES: ExpenseItem[] = [
   {
     id: 'flight-kristine',
     category: '交通',
-    title: 'Kristine 機票',
-    amount: 6322,
+    title: 'Kristine機票（15Kg）',
+    amount: 8322,
     currency: 'TWD',
     exchangeRate: 1,
     paid: true,
@@ -32,22 +31,12 @@ const INITIAL_EXPENSES: ExpenseItem[] = [
   {
     id: 'flight-lin',
     category: '交通',
-    title: 'Lin 機票',
+    title: 'Lin機票（10Kg）',
     amount: 6222,
     currency: 'TWD',
     exchangeRate: 1,
     paid: true,
     date: '已付'
-  },
-  {
-    id: 'initial-hotel',
-    category: '住宿',
-    title: '品川王子大飯店 (5泊)',
-    amount: 98970,
-    currency: 'JPY',
-    exchangeRate: DEFAULT_RATE,
-    paid: false,
-    date: '4/5-4/9'
   }
 ];
 
@@ -67,12 +56,11 @@ export const CostView: React.FC = () => {
     return saved ? parseFloat(saved) : DEFAULT_RATE;
   });
 
-  // Expense State - Using v2 key to ensure new defaults load
+  // Expense State
   const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
-    const saved = localStorage.getItem('tokyo_trip_expenses_v2');
+    const saved = localStorage.getItem('tokyo_trip_expenses_v5');
     if (saved) {
       const parsed = JSON.parse(saved);
-      // Migration: If old items don't have exchangeRate, assign the default
       return parsed.map((item: any) => ({
         ...item,
         exchangeRate: item.exchangeRate || DEFAULT_RATE
@@ -94,7 +82,7 @@ export const CostView: React.FC = () => {
 
   // Persistence
   useEffect(() => {
-    localStorage.setItem('tokyo_trip_expenses_v2', JSON.stringify(expenses));
+    localStorage.setItem('tokyo_trip_expenses_v5', JSON.stringify(expenses));
   }, [expenses]);
 
   useEffect(() => {
@@ -110,8 +98,8 @@ export const CostView: React.FC = () => {
       amount: parseInt(newExpense.amount),
       category: newExpense.category,
       currency: 'JPY', 
-      exchangeRate: currentExchangeRate, // SNAPSHOT the current rate here
-      paid: true, // Default to paid for new tracked expenses
+      exchangeRate: currentExchangeRate,
+      paid: true,
       date: new Date().toLocaleDateString('zh-TW', { month: 'numeric', day: 'numeric' })
     };
 
@@ -133,7 +121,6 @@ export const CostView: React.FC = () => {
     ));
   };
 
-  // Calculations (Using item-specific exchange rates)
   const totalTWD = expenses.reduce((acc, item) => {
     const itemTWD = item.currency === 'TWD' ? item.amount : item.amount * item.exchangeRate;
     return acc + itemTWD;
@@ -146,51 +133,32 @@ export const CostView: React.FC = () => {
 
   const pendingTWD = totalTWD - paidTWD;
 
-  // Category breakdown
   const categoryTotals = expenses.reduce((acc, item) => {
     const amountTWD = item.currency === 'TWD' ? item.amount : item.amount * item.exchangeRate;
     acc[item.category] = (acc[item.category] || 0) + amountTWD;
     return acc;
   }, {} as Record<string, number>);
 
-  const maxCatAmount = Math.max(...Object.values(categoryTotals), 1);
+  const maxCatAmount = Math.max(...(Object.values(categoryTotals) as number[]), 1);
 
-  // Sorting Logic
   const sortedExpenses = useMemo(() => {
     const paid = expenses.filter(e => e.paid);
     const unpaid = expenses.filter(e => !e.paid);
 
-    // 1. Sort Paid: Predefined/Oldest First (Chronological)
-    // "已先付款的在前"
     paid.sort((a, b) => {
-      // Check if ID is numeric (timestamp) or string (static)
       const isANumeric = !isNaN(Number(a.id));
       const isBNumeric = !isNaN(Number(b.id));
-
-      // Static IDs (like 'flight-kristine') come before Numeric Timestamp IDs
       if (!isANumeric && isBNumeric) return -1;
       if (isANumeric && !isBNumeric) return 1;
-      
-      // If both are timestamps, Sort Ascending (Oldest -> Newest)
-      if (isANumeric && isBNumeric) {
-        return Number(a.id) - Number(b.id);
-      }
-      
-      // If both are static, keep original order (based on list definition)
+      if (isANumeric && isBNumeric) return Number(a.id) - Number(b.id);
       return 0;
     });
 
-    // 2. Sort Unpaid: By Date
-    // "尚未付款的預計項目按日期排序"
     unpaid.sort((a, b) => {
        const getVal = (str: string) => {
-           // Extract "M/D" from string like "4/5-4/9" or "4/6"
            const match = str.match(/(\d+)\/(\d+)/);
-           if (match) {
-             // Convert to a number MMDD for easy sorting
-             return parseInt(match[1]) * 100 + parseInt(match[2]);
-           }
-           return 9999; // Items without date go to bottom
+           if (match) return parseInt(match[1]) * 100 + parseInt(match[2]);
+           return 9999;
        };
        return getVal(a.date) - getVal(b.date);
     });
@@ -200,7 +168,6 @@ export const CostView: React.FC = () => {
 
   return (
     <div className="px-6 py-8 pb-32 h-full overflow-y-auto no-scrollbar relative">
-      {/* Header */}
       <div className="mb-8 flex justify-between items-end">
         <div>
           <span className="text-slate-400 text-[10px] font-bold tracking-[0.2em] uppercase mb-2 block font-serif-tc">
@@ -212,11 +179,9 @@ export const CostView: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Card */}
       <div className="bg-slate-900 text-white p-6 rounded-2xl shadow-xl mb-8 relative overflow-hidden group">
         <div className="absolute top-0 right-0 w-32 h-32 bg-white/5 rounded-full -mr-10 -mt-10 blur-2xl group-hover:bg-white/10 transition-colors duration-700"></div>
         
-        {/* Exchange Rate Input - Absolute Positioned */}
         <div className="absolute top-6 right-6 z-20 flex flex-col items-end gap-1">
             <div className="flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10 hover:bg-white/20 transition-colors">
                 <RefreshCw className="w-3 h-3 text-slate-300" />
@@ -258,7 +223,6 @@ export const CostView: React.FC = () => {
         </div>
       </div>
 
-      {/* Category Breakdown */}
       {Object.keys(categoryTotals).length > 0 && (
         <div className="mb-10 animate-fade-in">
             <h3 className="text-sm font-bold text-slate-900 tracking-widest mb-4 flex items-center gap-2 font-serif-tc">
@@ -266,14 +230,14 @@ export const CostView: React.FC = () => {
                 費用分佈
             </h3>
             <div className="space-y-3">
-            {Object.entries(categoryTotals)
+            {(Object.entries(categoryTotals) as [string, number][])
                 .sort(([,a], [,b]) => b - a)
                 .map(([cat, amount], idx) => (
                 <div key={idx} className="flex items-center gap-3">
                     <span className="text-[11px] font-bold text-slate-400 w-12 text-right tracking-wider font-serif-tc">{cat}</span>
                     <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
                         <div 
-                            className={`h-full ${CATEGORY_CONFIG[cat as CategoryType].color} rounded-full transition-all duration-1000 ease-out`} 
+                            className={`h-full ${CATEGORY_CONFIG[cat as CategoryType]?.color || 'bg-slate-400'} rounded-full transition-all duration-1000 ease-out`} 
                             style={{ width: `${(amount / maxCatAmount) * 100}%` }}
                         ></div>
                     </div>
@@ -286,7 +250,6 @@ export const CostView: React.FC = () => {
         </div>
       )}
 
-      {/* Expense List */}
       <div>
         <h3 className="text-sm font-bold text-slate-900 tracking-widest mb-4 flex items-center gap-2 font-serif-tc">
             <span className="w-1 h-4 bg-slate-900"></span>
@@ -294,8 +257,7 @@ export const CostView: React.FC = () => {
         </h3>
         <div className="space-y-3">
           {sortedExpenses.map((item) => {
-            const Icon = CATEGORY_CONFIG[item.category].icon;
-            // Calculate TWD for this specific item using ITS stored rate
+            const Icon = CATEGORY_CONFIG[item.category]?.icon || Wallet;
             const itemTWD = item.currency === 'JPY' ? Math.round(item.amount * item.exchangeRate) : item.amount;
 
             return (
@@ -331,7 +293,6 @@ export const CostView: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* Delete Action */}
                     <button 
                         onClick={() => handleDelete(item.id)}
                         className="absolute right-0 top-0 bottom-0 w-12 bg-rose-500 text-white flex items-center justify-center translate-x-full group-hover:translate-x-0 transition-transform duration-200"
@@ -341,15 +302,9 @@ export const CostView: React.FC = () => {
                 </div>
             );
           })}
-          {expenses.length === 0 && (
-              <div className="text-center py-10 text-slate-300 text-sm font-serif-tc">
-                  尚未新增任何花費
-              </div>
-          )}
         </div>
       </div>
 
-      {/* Floating Action Button */}
       <div className="fixed bottom-24 right-6 z-40">
         <button
           onClick={() => setIsModalOpen(true)}
@@ -359,7 +314,6 @@ export const CostView: React.FC = () => {
         </button>
       </div>
 
-      {/* Add Expense Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm animate-fade-in" onClick={() => setIsModalOpen(false)}>
           <div 

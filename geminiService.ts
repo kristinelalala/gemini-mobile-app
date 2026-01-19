@@ -1,5 +1,6 @@
+
 import { GoogleGenAI } from "@google/genai";
-import { ITINERARY_DATA } from "./constants";
+import { ITINERARY_DATA } from "../constants";
 
 // Construct a context string from the itinerary data
 const ITINERARY_CONTEXT = JSON.stringify(ITINERARY_DATA, null, 2);
@@ -32,7 +33,7 @@ export const sendMessageToGemini = async (message: string): Promise<string> => {
     const ai = new GoogleGenAI({ apiKey });
     
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-flash-preview',
       contents: message,
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
